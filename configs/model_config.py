@@ -53,7 +53,7 @@ llm_model_dict = {
     },
     "chatglm-6b": {
         "name": "chatglm-6b",
-        "pretrained_model_name": "THUDM/chatglm-6b",
+        "pretrained_model_name": "/home/sdby/code/models/chatglm-6b/",
         "local_model_path": None,
         "provides": "ChatGLMLLMChain"
     },
@@ -179,14 +179,14 @@ llm_model_dict = {
         "pretrained_model_name": "gpt-3.5-turbo",
         "provides": "FastChatOpenAILLMChain",
         "local_model_path": None,
-        "api_base_url": "https://api.openapi.com/v1",
-        "api_key": ""
+        "api_base_url": "https://api.openai.com/v1",
+        "api_key": "sk-MUUKOm4TBPKpj1YMMmHeT3BlbkFJnR8HOGvB4hm8FFP3"
     },
 
 }
 
 # LLM 名称
-LLM_MODEL = "chatglm-6b"
+LLM_MODEL = "chatglm2-6b"
 # 量化加载8bit 模型
 LOAD_IN_8BIT = False
 # Load the model with bfloat16 precision. Requires NVIDIA Ampere GPU.
@@ -211,19 +211,22 @@ LLM_DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mp
 KB_ROOT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "knowledge_base")
 
 # 基于上下文的prompt模版，请务必保留"{question}"和"{context}"
-PROMPT_TEMPLATE = """已知信息：
-{context} 
+PROMPT_TEMPLATE = """相关信息：
+---
+{context}
 
-根据上述已知信息，简洁和专业的来回答用户的问题。如果无法从中得到答案，请说 “根据已知信息无法回答该问题” 或 “没有提供足够的相关信息”，不允许在答案中添加编造成分，答案请使用中文。 问题是：{question}"""
+---
+根据上述信息简洁和专业的来回答用户的问题。回答请不要带“根据您提供的信息”，如果无法从中得到答案，请说 “无法回答该问题” 或 “没有提供足够的相关信息”，不允许在答案中添加编造回答，答案请使用中文。
+用户问题是：{question}"""
 
 # 缓存知识库数量,如果是ChatGLM2,ChatGLM2-int4,ChatGLM2-int8模型若检索效果不好可以调成’10’
-CACHED_VS_NUM = 1
+CACHED_VS_NUM = 6
 
 # 文本分句长度
-SENTENCE_SIZE = 100
+SENTENCE_SIZE = 50
 
 # 匹配后单段上下文长度
-CHUNK_SIZE = 250
+CHUNK_SIZE = 50
 
 # 传入LLM的历史记录长度
 LLM_HISTORY_LEN = 3
@@ -232,7 +235,7 @@ LLM_HISTORY_LEN = 3
 VECTOR_SEARCH_TOP_K = 5
 
 # 知识检索内容相关度 Score, 数值范围约为0-1100，如果为0，则不生效，经测试设置为小于500时，匹配结果更精准
-VECTOR_SEARCH_SCORE_THRESHOLD = 390
+VECTOR_SEARCH_SCORE_THRESHOLD = 400
 
 NLTK_DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "nltk_data")
 
@@ -266,4 +269,4 @@ BING_SUBSCRIPTION_KEY = ""
 # 是否开启中文标题加强，以及标题增强的相关配置
 # 通过增加标题判断，判断哪些文本为标题，并在metadata中进行标记；
 # 然后将文本与往上一级的标题进行拼合，实现文本信息的增强。
-ZH_TITLE_ENHANCE = False
+ZH_TITLE_ENHANCE = True

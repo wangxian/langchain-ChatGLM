@@ -106,6 +106,9 @@ def generate_prompt(related_docs: List[str],
                     prompt_template: str = PROMPT_TEMPLATE, ) -> str:
     context = "\n".join([doc.page_content for doc in related_docs])
     prompt = prompt_template.replace("{question}", query).replace("{context}", context)
+
+    print("当前使用的 prompt = ", prompt)
+
     return prompt
 
 
@@ -225,23 +228,50 @@ class LocalDocQA:
             logger.error(e)
             return None, [one_title]
 
+    # 知识库问答
     def get_knowledge_based_answer(self, query, vs_path, chat_history=[], streaming: bool = STREAMING):
         vector_store = load_vector_store(vs_path, self.embeddings)
         vector_store.chunk_size = self.chunk_size
         vector_store.chunk_conent = self.chunk_conent
         vector_store.score_threshold = self.score_threshold
+        # 根据 top_k 获取相关文档内容
         related_docs_with_score = vector_store.similarity_search_with_score(query, k=self.top_k)
         torch_gc()
+
+        print("get_knowledge_based_answer 生成提示词....", "STREAMING=", STREAMING)
+
+        # 这里可以修改，如果知识库中没有找到相关内容，可以停止执行
         if len(related_docs_with_score) > 0:
             prompt = generate_prompt(related_docs_with_score, query)
         else:
+            print(" ===== - - -  -- - - -- - - - - - --  - =====【没找到知识库，可以不往下执行】")
             prompt = query
+
+            # resp = "🤡 抱歉，我暂时回答不了这个问题，请换个问题吧~"
+            # response = {"query": query, "result": "No relevant content found.", "source_documents": []}
+            # history = chat_history + [[query, response["result"]]]
+            # return response, history
+
+
+            # 停止，不再继续了
+            # resp = "🤡 抱歉，我暂时回答不了这个问题，请换个问题吧~"
+            # history = chat_history
+            # history[-1][0] = query
+            # response = {"query": query,
+            #             "result": resp,
+            #             "source_documents": related_docs_with_score}
+
+            # print(" answer_result_stream_result resp 提前 = 得到的结果是 = ", resp)
+
+            # return [(response, chat_history)]
 
         answer_result_stream_result = self.llm_model_chain(
             {"prompt": prompt, "history": chat_history, "streaming": streaming})
 
         for answer_result in answer_result_stream_result['answer_result_stream']:
             resp = answer_result.llm_output["answer"]
+            print(" answer_result_stream_result resp 得到的结果是 = ", resp)
+
             history = answer_result.history
             history[-1][0] = query
             response = {"query": query,
@@ -278,6 +308,8 @@ class LocalDocQA:
         results = bing_search(query)
         result_docs = search_result2docs(results)
         prompt = generate_prompt(result_docs, query)
+
+        print("get_search_result_based_answer 生成提示词....")
 
         answer_result_stream_result = self.llm_model_chain(
             {"prompt": prompt, "history": chat_history, "streaming": streaming})
